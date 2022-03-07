@@ -11,12 +11,9 @@ class Database
 
     public function createConnection()
     {
-        $this -> connection = null;
-        try {
-            $this -> connection = new PDO("mysql:host=" . $this -> host .";dbname=" . $this -> db, $this -> username, $this -> pass);
-            $this ->connection -> exec("set names utf8");
-        } catch (PDOException $err) {
-            echo "Error connecting to database: " . $err -> getMessage();
+        $this -> connection = new mysqli($this -> host . "," . $this -> username . "," . $this -> pass . "," . $this -> db);
+        if($connection -> connect_errno) {
+          echo "Error connecting to database: " . $connection -> connect_error;
         }
         return $this -> connection;
     }

@@ -97,7 +97,31 @@ include_once 'connection.php';
      }
 
 
-     public function add_student()
+     public function get_student($id = 0)
+     {
+         //Create SQL Query
+         $query = "SELECT * FROM " . $this -> table .
+                      "WHERE student_id = :id";
+
+         //Prepare Query
+         $statement = $this -> connection -> prepare($query);
+
+         //Sanitize inputs
+         $this -> id = htmlspecialchars(strip_tags($this -> id));;
+
+         //Bind values
+         $statement -> bindParam(":id", $this -> id);
+
+         //Execute Query
+         if ($statement -> execute()) {
+             return true;
+         }
+
+         return false;
+     }
+
+
+     public function insert_student()
      {
          //Create SQL Query
          $query = "INSERT INTO " . $this -> table .
@@ -211,6 +235,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
             array("Message" => "No students in records.")
         );
     }
+} elseif ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    //Check to make sure there's a valid id and assign it
+    $id = isset($_GET['id']) ? $_GET['id'] : die();
+    //Query for a single student
+    $statement = $student -> get_student($this -> id);
+    //Count the # of Rows returned
+    $count = $statement -> rowCount();
+
+    //Confirm there is only one student with that id
+    if ($count == 1) {
+        http_response_code(200);
+        echo json_encode($student);
+    } else if ($count > 1) {
+      http_response_code(500);
+
+      echo json_encode(
+          array("Message" => "Request turned wrong number of results with id = ." . $this -> id);
+      );
+    } else{
+        http_response_code(404);
+
+        echo json_encode(
+            array("Message" => "No students in records.")
+        );
+    }
 } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
     //Grab the new student data
     $data = json_decode(file_get_contents("php://input"));
@@ -221,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
         $student -> studAge = $data -> student_age;
         $student -> studNum = $data -> student_number;
 
-        if ($student -> add_student()) {
+        if ($student -> insert_student()) {
             http_response_code(201);
             echo json_encode(array("Message: " => "Student successfully added to database."));
         } else {
