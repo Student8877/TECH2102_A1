@@ -11,10 +11,11 @@ class Database
 
     public function createConnection()
     {
-        $this -> connection = new mysqli($this -> host . "," . $this -> username . "," . $this -> pass . "," . $this -> db);
-        if($connection -> connect_errno) {
+        $this -> connection = new mysqli($this -> host, $this -> username, $this -> pass, $this -> db);
+        if($this -> connection === false) {
           echo "Error connecting to database: " . $connection -> connect_error;
         }
+        echo ("Connected to database...");
         return $this -> connection;
     }
 }

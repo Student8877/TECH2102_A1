@@ -1,8 +1,8 @@
 Testing
 ===================
-API Address = http://localhost/TECH_2102_GLA/api/students.php
-Walkthrough Video - https://bowvalley-my.sharepoint.com/:v:/g/personal/j_braaksma331_mybvc_ca/EWFqfjHBDEpIgHolJKRuD4kBBzzUnsGvi6GLdOB4Lf9e0Q
-Github Repo - https://github.com/Student8877/TECH201_GLA_1/invitations
+API Address = http://localhost/Assignment1/api/students.php
+Walkthrough Video - https://bowvalley-my.sharepoint.com/:v:/g/personal/j_braaksma331_mybvc_ca/EU8z7Ug1x3ZPqoHqqqqHr_QBAYNdoP0BuULLYxc0m5DVTQ?e=lqLOdv
+Github Repo - https://github.com/Student8877/TECH2102_A1
 
 
 GET REQUEST (Returns all students)
@@ -11,6 +11,13 @@ GET REQUEST (Returns all students)
 2.If successful, API returns 200 code and JSON response containing array of all student data from database.
 3.If failed, API returns appropriate error code with message.
 
+GET REQUEST (Returns one students)
+==================================
+1.Send GET Request to API Address with an "id" query parameter.
+  Eg.http://localhost/Assignment1/api/students.php/?id=2 (id = 2)
+  You can view existing entries in database to get id values following the GET request instructions above.
+2.If successful, API returns 200 code and JSON response containing array of the student data with a matching id from database.
+3.If failed, API returns appropriate error code with message.
 
 POST REQUEST (Adds a new student)
 =================================

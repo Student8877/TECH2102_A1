@@ -29,10 +29,10 @@ include_once 'connection.php';
      {
          //Create SQL Query
          $query = "UPDATE " . $this -> table .
-                      " SET student_name = :name,
-                            student_age = :age,
-                            student_number = :number
-                      WHERE id = :id";
+                      " SET student_name = ?,
+                            student_age = ?,
+                            student_number = ?
+                      WHERE id = ?";
 
          //Prepare Query
          $statement = $this -> connection -> prepare($query);
@@ -41,18 +41,20 @@ include_once 'connection.php';
          $this -> studName = htmlspecialchars(strip_tags($this -> studName));
          $this -> studAge = htmlspecialchars(strip_tags($this -> studAge));
          $this -> studNum = htmlspecialchars(strip_tags($this -> studNum));
-         $this -> studNum = htmlspecialchars(strip_tags($this -> studNum));
          $this -> id = htmlspecialchars(strip_tags($this -> id));
 
          //Bind values
-         $statement -> bindParam(":name", $this -> studName);
-         $statement -> bindParam(":age", $this -> studAge);
-         $statement -> bindParam(":number", $this -> studNum);
-         $statement -> bindParam(":id", $this -> id);
+         $statement -> bind_param("siii", $this -> studName, $this -> studAge, $this -> studNum, $this -> id);
+
 
          //Execute Query
          if ($statement -> execute()) {
+           if($statement -> affected_rows > 0)  {
              return true;
+           }
+           else {
+             return false;
+           }
          }
 
          return false;
@@ -63,7 +65,7 @@ include_once 'connection.php';
      {
          //Create SQL Query
          $query = "DELETE FROM " . $this -> table .
-                    " WHERE id = :id";
+                    " WHERE id = ?";
 
          //Prepare Query
          $statement = $this -> connection -> prepare($query);
@@ -72,13 +74,17 @@ include_once 'connection.php';
          $this -> studName = htmlspecialchars(strip_tags($this -> id));
 
          //Bind values
-         $statement -> bindParam(":id", $this -> id);
+         $statement -> bind_param("i", $this -> id);
 
          //Execute Query
          if ($statement -> execute()) {
+           if($statement -> affected_rows > 0)  {
              return true;
+           }
+           else {
+             return false;
+           }
          }
-
          return false;
      }
 
@@ -88,10 +94,7 @@ include_once 'connection.php';
          //Create SQL Query
          $query = "SELECT * FROM " . $this -> table;
          //Prepare Query
-         $statement = $this -> connection -> prepare($query);
-
-         //Execute Query
-         $statement -> execute();
+         $statement = $this -> connection -> query($query);
 
          return $statement;
      }
@@ -101,23 +104,25 @@ include_once 'connection.php';
      {
          //Create SQL Query
          $query = "SELECT * FROM " . $this -> table .
-                      "WHERE student_id = :id";
+                      " WHERE id = ?";
 
          //Prepare Query
          $statement = $this -> connection -> prepare($query);
 
          //Sanitize inputs
-         $this -> id = htmlspecialchars(strip_tags($this -> id));;
+         $this -> id = htmlspecialchars(strip_tags($this -> id));
+
 
          //Bind values
-         $statement -> bindParam(":id", $this -> id);
+         $statement -> bind_param("i", $id);
 
          //Execute Query
          if ($statement -> execute()) {
-             return true;
+             $result = $statement -> get_result();
+             return $result;
+         } else {
+             return null;
          }
-
-         return false;
      }
 
 
@@ -125,9 +130,9 @@ include_once 'connection.php';
      {
          //Create SQL Query
          $query = "INSERT INTO " . $this -> table .
-                      " SET student_name = :name,
-                           student_age = :age,
-                           student_number = :number";
+                      " SET student_name = ?,
+                           student_age = ?,
+                           student_number = ?";
 
          //Prepare Query
          $statement = $this -> connection -> prepare($query);
@@ -138,10 +143,7 @@ include_once 'connection.php';
          $this -> studNum = htmlspecialchars(strip_tags($this -> studNum));
 
          //Bind values
-         $statement -> bindParam(":name", $this -> studName);
-         $statement -> bindParam(":age", $this -> studAge);
-         $statement -> bindParam(":number", $this -> studNum);
-
+         $statement -> bind_param("sis", $this -> studName, $this -> studAge, $this -> studNum);
          //Execute Query
          if ($statement -> execute()) {
              return true;
@@ -201,27 +203,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
         http_response_code(400);
         echo json_encode(array("Message: " => "Required 'id' data missing. Failed to delete student."));
     }
-} elseif ($_SERVER['REQUEST_METHOD'] == 'GET') {
+} elseif ($_SERVER['REQUEST_METHOD'] == 'GET' && $_SERVER['QUERY_STRING'] == '') {
     //Query for students
     $statement = $student -> get_students();
     //Count the # of Rows returned
-    $count = $statement -> rowCount();
+    $count = $statement -> num_rows;
 
     //Confirm there are records
     if ($count > 0) {
         //Create an array to hold the results in
         $students = array();
 
-        while ($row = $statement -> fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $statement -> fetch_assoc()) {
             extract($row);
-
             $item = array(
         "id" => $id,
         "student_name" => $student_name,
         "student_number" => $student_number,
         "student_age" => $student_age,
       );
-
             array_push($students, $item);
         }
 
@@ -235,29 +235,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
             array("Message" => "No students in records.")
         );
     }
-} elseif ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    //Check to make sure there's a valid id and assign it
-    $id = isset($_GET['id']) ? $_GET['id'] : die();
-    //Query for a single student
-    $statement = $student -> get_student($this -> id);
+} elseif ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['id'])) {
+    $id = $_GET['id'];
+    $result = $student -> get_student($id);
     //Count the # of Rows returned
-    $count = $statement -> rowCount();
-
-    //Confirm there is only one student with that id
-    if ($count == 1) {
-        http_response_code(200);
-        echo json_encode($student);
-    } else if ($count > 1) {
-      http_response_code(500);
-
-      echo json_encode(
-          array("Message" => "Request turned wrong number of results with id = ." . $this -> id);
-      );
-    } else{
+    $count = $result -> num_rows;
+    //Confirm a result was returned
+    if ($count > 0) {
+        //Confirm there is only one student with that id
+        if ($count === 1) {
+            extract($result -> fetch_assoc());
+            $student -> id = $id;
+            $student -> studName = $student_name;
+            $student -> studNum = $student_number;
+            $student -> studAge = $student_age;
+            http_response_code(200);
+            echo json_encode($student);
+        } else {
+            http_response_code(500);
+            echo json_encode(
+                array("Message" => "Request returned wrong number of results. Check 'id' and try again.")
+            );
+        }
+    } else {
         http_response_code(404);
 
         echo json_encode(
-            array("Message" => "No students in records.")
+            array("Message" => "No student found with matching id. Check 'id' and try again.")
         );
     }
 } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -282,5 +286,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
         echo json_encode(array("Message: " => "Required data missing. Failed to create new student."));
     }
 }
-
-?>
